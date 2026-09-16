@@ -15,6 +15,15 @@ Uninstall-MsiPackage.cmd -ProductName "MyApp*" -FileExtension .abc -ShortcutFold
 Vyžaduje: Windows 10/11, PowerShell 5.1, oprávnění správce pro per-machine balíčky.
 Log: `logs\Uninstall-MsiPackage.log` + `logs\msi_<ProductCode>.log` (verbose msiexec).
 
+## Instalace
+
+```
+git clone --recurse-submodules https://github.com/dnemecek/uninstall-msipackage.git
+```
+
+Bez `--recurse-submodules` zůstane `common/` prázdná a skript selže na chybějícím `Add-Log.ps1`.
+Git na Windows: `winget install --id Git.Git -e --source winget`.
+
 ## Struktura
 
 ```
