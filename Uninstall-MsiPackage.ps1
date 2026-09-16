@@ -126,7 +126,7 @@ function Get-InstalledMsi {
                 code = $_.PSChildName; date = $_.InstallDate
                 scope = if ($_.PSPath -match 'HKEY_CURRENT_USER') { 'user' } else { 'machine' }
             }
-        } | Group-Object code | ForEach-Object { $_.Group[0] }
+        } | Group-Object code | ForEach-Object { $_.Group[0] } | Sort-Object name
 }
 
 function Get-AssocState {
