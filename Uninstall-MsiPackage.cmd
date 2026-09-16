@@ -3,10 +3,11 @@ REM Uninstall-MsiPackage - CMD Launcher
 REM Autor: David Nemecek | Zari 2026
 REM
 REM Pouziti:
-REM   Uninstall-MsiPackage.cmd -Inventory
-REM   Uninstall-MsiPackage.cmd -WorkspaceUrl <url> -ProductName <vzor> [-WhatIf] [-Verbose]
+REM   Uninstall-MsiPackage.cmd -List
+REM   Uninstall-MsiPackage.cmd -Filter "*RemoteApp*"            (interaktivni vyber)
+REM   Uninstall-MsiPackage.cmd -ProductCode {GUID} -Force [-DryRun] [-FileExtension .x] [-ShortcutFolder N]
 REM
-REM Vyzaduje: elevated (Administrator) pristup pro odinstalaci MSI
+REM Vyzaduje: elevated (Administrator) pristup pro per-machine MSI
 
 set "scriptPath=%~dp0"
 set "scriptName=%~n0"
