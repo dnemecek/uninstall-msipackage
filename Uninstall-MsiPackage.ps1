@@ -85,8 +85,11 @@ param (
     [string]$Vendor = '*',
     [switch]$Json,
     [string[]]$ProductName = @(),
+    [ValidatePattern('^\{[0-9A-Fa-f]{8}-([0-9A-Fa-f]{4}-){3}[0-9A-Fa-f]{12}\}$')]
     [string[]]$ProductCode = @(),
+    [ValidatePattern('^\.?[A-Za-z0-9]+$')]
     [string[]]$FileExtension = @(),
+    [ValidatePattern('^(?!\.\.?$)[^\\/:*?"<>|]+$')]
     [string[]]$ShortcutFolder = @(),
     [string]$LogPath,
     [switch]$DryRun,
@@ -95,7 +98,7 @@ param (
 
 $ErrorActionPreference = 'Stop'
 $startTime = Get-Date
-$scriptVersion = '1.0.0'
+$scriptVersion = '1.1.0'
 if (-not $LogPath) { $LogPath = Join-Path $PSScriptRoot 'logs\Uninstall-MsiPackage.log' }
 . (Join-Path $PSScriptRoot 'common\Add-Log.ps1')
 function Write-Log { param([string]$Message, [string]$Level = 'INFO') Add-Log -Message $Message -Level $Level -LogFile $LogPath -StartTime $startTime }
@@ -123,7 +126,7 @@ function Get-InstalledMsi {
                 code = $_.PSChildName; date = $_.InstallDate
                 scope = if ($_.PSPath -match 'HKEY_CURRENT_USER') { 'user' } else { 'machine' }
             }
-        } | Sort-Object name -Unique
+        } | Group-Object code | ForEach-Object { $_.Group[0] }
 }
 
 function Get-AssocState {
@@ -204,7 +207,13 @@ try {
     }
     
     # ---------------------------------------------------------------- uninstall
+    $productCodePattern = '^\{[0-9A-Fa-f]{8}-([0-9A-Fa-f]{4}-){3}[0-9A-Fa-f]{12}\}$'
     foreach ($m in $selected) {
+        if ($m.code -notmatch $productCodePattern) {
+            $result.failed += "$($m.code):invalid_product_code_format"
+            Write-Log "SKIPPED $($m.name) - code '$($m.code)' neni platny MSI ProductCode GUID, msiexec se nevola" 'ERROR'
+            continue
+        }
         $msiLog = Join-Path (Split-Path $LogPath -Parent) ("msi_" + ($m.code -replace '[{}]', '') + ".log")
         if ($DryRun) { Write-Log "DRY-RUN: msiexec /x $($m.code) ($($m.name))"; continue }
         Write-Log "Uninstalling $($m.name) $($m.code)"
