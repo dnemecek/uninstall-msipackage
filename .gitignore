@@ -1,0 +1,18 @@
+# secrets / environment
+.env
+*.key
+*.pem
+*.cred
+
+# workspace (WS-001)
+local/
+.claude/
+CLAUDE.md
+
+# runtime
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,25 @@
+@echo off
+REM Uninstall-MsiPackage - CMD Launcher
+REM Autor: David Nemecek | Zari 2026
+REM
+REM Pouziti:
+REM   Uninstall-MsiPackage.cmd -Inventory
+REM   Uninstall-MsiPackage.cmd -WorkspaceUrl <url> -ProductName <vzor> [-WhatIf] [-Verbose]
+REM
+REM Vyzaduje: elevated (Administrator) pristup pro odinstalaci MSI
+
+set "scriptPath=%~dp0"
+set "scriptName=%~n0"
+
+set "hasVerbose=0"
+for %%a in (%*) do (
+    if /i "%%~a"=="-Verbose" set "hasVerbose=1"
+)
+
+if "%hasVerbose%"=="1" (
+    powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "%scriptPath%%scriptName%.ps1" %*
+) else (
+    powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File "%scriptPath%%scriptName%.ps1" %* 2>nul
+)
+set "exitCode=%ERRORLEVEL%"
+exit /b %exitCode%
