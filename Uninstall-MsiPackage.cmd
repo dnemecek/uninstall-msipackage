@@ -3,7 +3,7 @@ REM Uninstall-MsiPackage - CMD Launcher
 REM Autor: David Nemecek | Zari 2026
 REM
 REM Pouziti:
-REM   Uninstall-MsiPackage.cmd -List
+REM   Uninstall-MsiPackage.cmd -List [-Filter "*x*"] [-Vendor "y"] [-Json]
 REM   Uninstall-MsiPackage.cmd -Filter "*RemoteApp*"            (interaktivni vyber)
 REM   Uninstall-MsiPackage.cmd -ProductCode {GUID} -Force [-DryRun] [-FileExtension .x] [-ShortcutFolder N]
 REM

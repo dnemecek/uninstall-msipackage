@@ -19,11 +19,19 @@
     - Vyzaduje elevated (Administrator) pristup pro per-machine balicky.
 
 .PARAMETER List
-    Pouze vypise nainstalovane MSI (JSON). Zadne zmeny.
+    Pouze vypise nainstalovane MSI jako tabulku (s -Json jako JSON). Zadne zmeny.
+    Respektuje -Filter, -Vendor, -ProductName, -ProductCode.
 
 .PARAMETER Filter
     Wildcard na DisplayName pro zuzeni seznamu (napr. "*RemoteApp*").
     Vychozi: vse.
+
+.PARAMETER Vendor
+    Wildcard na Publisher pro zuzeni seznamu (napr. "Administrator" =
+    RemoteApp balicky generovane RemoteApp Managerem). Vychozi: vse.
+
+.PARAMETER Json
+    Vystup -List jako JSON misto tabulky (Ansible).
 
 .PARAMETER ProductName
     Vzory DisplayName k odinstalaci (wildcard). Lze vice hodnot.
@@ -50,8 +58,11 @@
     .\Uninstall-MsiPackage.ps1 -List
 
 .EXAMPLE
-    .\Uninstall-MsiPackage.ps1 -Filter "*RemoteApp*"
-    # interaktivni vyber a odinstalace
+    .\Uninstall-MsiPackage.ps1 -List -Vendor Administrator -Json
+
+.EXAMPLE
+    .\Uninstall-MsiPackage.ps1 -Vendor Administrator
+    # interaktivni vyber a odinstalace balicku daneho vydavatele
 
 .EXAMPLE
     .\Uninstall-MsiPackage.ps1 -ProductCode "{GUID}" -FileExtension .abc -Force
@@ -59,7 +70,7 @@
 .NOTES
     Nazev:   Uninstall-MsiPackage.ps1
     Autor:   David Nemecek
-    Verze:   1.0.1
+    Verze:   1.1.0
     Vyzaduje: Windows 10/11, PowerShell 5.1
 
     SECURITY WARNING:
@@ -71,6 +82,8 @@
 param (
     [switch]$List,
     [string]$Filter = '*',
+    [string]$Vendor = '*',
+    [switch]$Json,
     [string[]]$ProductName = @(),
     [string[]]$ProductCode = @(),
     [string[]]$FileExtension = @(),
@@ -126,29 +139,41 @@ function Get-AssocState {
 }
 
 try {
-    Write-Log "=== Uninstall-MsiPackage v$scriptVersion start (dry_run=$DryRun, list=$List, filter=$Filter)"
+    Write-Log "=== Uninstall-MsiPackage v$scriptVersion start (dry_run=$DryRun, list=$List, filter=$Filter, vendor=$Vendor)"
     $result.elevated = Test-Elevated
-    $installed = @(Get-InstalledMsi | Where-Object { $_.name -like $Filter })
+    $installed = @(Get-InstalledMsi | Where-Object { $_.name -like $Filter -and ($_.vendor -like $Vendor -or (-not $_.vendor -and $Vendor -eq '*')) })
+    if ($ProductName -or $ProductCode) {
+        $installed = @($installed | Where-Object {
+            $n = $_.name; $c = $_.code
+            ($ProductName | Where-Object { $n -like $_ }) -or ($ProductCode | Where-Object { $c -ieq $_ })
+        })
+    }
     
     # ---------------------------------------------------------------- list
     if ($List) {
-        $result.packages = $installed
-        $result.assoc = @(Get-AssocState -Ext $FileExtension)
         Write-Log "List: $($installed.Count) packages"
-        $result | ConvertTo-Json -Depth 5; exit 0
+        if ($Json) {
+            $result.packages = $installed
+            $result.assoc = @(Get-AssocState -Ext $FileExtension)
+            $result | ConvertTo-Json -Depth 5
+        } else {
+            Write-Host ""
+            Write-Host "Installed MSI packages (filter: $Filter, vendor: $Vendor) - $($installed.Count)"
+            $installed | Format-Table @{n='Name';e={$_.name}}, @{n='Version';e={$_.version}}, @{n='Vendor';e={$_.vendor}}, @{n='Scope';e={$_.scope}}, @{n='ProductCode';e={$_.code}} -AutoSize | Out-String -Width 220 | Write-Host
+            $assoc = @(Get-AssocState -Ext $FileExtension)
+            if ($assoc) { $assoc | Format-Table ext, userchoice, userchoice_valid -AutoSize | Out-String | Write-Host }
+        }
+        exit 0
     }
     
     # ---------------------------------------------------------------- selection
     $selected = @()
     if ($ProductName -or $ProductCode) {
-        $selected = @($installed | Where-Object {
-            $n = $_.name; $c = $_.code
-            ($ProductName | Where-Object { $n -like $_ }) -or ($ProductCode | Where-Object { $c -ieq $_ })
-        })
+        $selected = $installed
     } elseif (-not $Force) {
         if ($installed.Count -eq 0) { Write-Host "No MSI packages match filter '$Filter'."; exit 0 }
         Write-Host ""
-        Write-Host "Installed MSI packages (filter: $Filter)"
+        Write-Host "Installed MSI packages (filter: $Filter, vendor: $Vendor)"
         Write-Host "----------------------------------------"
         for ($i = 0; $i -lt $installed.Count; $i++) {
             $p = $installed[$i]

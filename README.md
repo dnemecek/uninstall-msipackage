@@ -6,8 +6,10 @@ zbylé per-user asociace přípon a Start-menu složky se zástupci.
 ## Použití
 
 ```
-Uninstall-MsiPackage.cmd -List                          # jen výpis (JSON)
-Uninstall-MsiPackage.cmd -Filter "*RemoteApp*"          # interaktivní výběr + odinstalace
+Uninstall-MsiPackage.cmd -List                          # výpis (tabulka); -Json pro JSON
+Uninstall-MsiPackage.cmd -List -Vendor Administrator    # jen balíčky daného vydavatele
+Uninstall-MsiPackage.cmd -Vendor Administrator          # interaktivní výběr + odinstalace
+Uninstall-MsiPackage.cmd -Filter "*RemoteApp*"          # totéž, filtr podle názvu
 Uninstall-MsiPackage.cmd -ProductCode "{GUID}" -Force   # dávkově, bez dotazů
 Uninstall-MsiPackage.cmd -ProductName "MyApp*" -FileExtension .abc -ShortcutFolder "MyApp" -DryRun -Force
 ```
